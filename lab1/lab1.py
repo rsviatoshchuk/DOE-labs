@@ -16,8 +16,16 @@ class Experiment:
         self.feedback_function_vector = None
         self.y_et = None
 
+    def start_random_experiment(self):
+        self.random_fill()
+        self.get_zero_factor_level_vector()
+        self.get_factor_change_interval_vector()
+        self.get_feedback_function_vector()
+        self.get_normalized_matrix()
+
     def random_fill(self):
-        self.matrix = np.random.randint(self.low_limit, self.up_limit + 1, (self.number_of_experiments, self.number_of_factors))
+        self.matrix = np.random.randint(self.low_limit, self.up_limit + 1,
+                                        (self.number_of_experiments, self.number_of_factors))
 
     def get_zero_factor_level_vector(self):
         self.zero_factor_level_vector = np.array(
@@ -25,7 +33,8 @@ class Experiment:
 
     def get_factor_change_interval_vector(self):
         self.factor_change_interval_vector = np.array(
-            [self.get_factor_change_interval(self.zero_factor_level_vector[i], self.matrix[:, i].min()) for i in range(self.number_of_factors)], float)
+            [self.get_factor_change_interval(self.zero_factor_level_vector[i], self.matrix[:, i].min())
+             for i in range(self.number_of_factors)], float)
 
     def get_feedback_function_vector(self):
         self.feedback_function_vector = np.array(
@@ -65,18 +74,13 @@ if __name__ == '__main__':
     num_of_fact = 3
     reg_coef = [2, 3, 4, 5]
     ex = Experiment(low_lim, up_lim, num_of_ex, num_of_fact, reg_coef)
-
-    ex.random_fill()
+    ex.start_random_experiment()
+    print("Коефіцієнти регресії:", ex.regression_coefficients)
     print("Матриця факторів:\n", ex.matrix)
-    ex.get_zero_factor_level_vector()
     print("Нульовий рівень х0:\n", ex.zero_factor_level_vector)
-    ex.get_factor_change_interval_vector()
     print("dx:\n", ex.factor_change_interval_vector)
-    ex.get_feedback_function_vector()
     print("Значення функції відгуку:\n", ex.feedback_function_vector)
-    ex.get_normalized_matrix()
     print("Нормалізована матриця факторів:\n", ex.normalized_matrix)
-    ex.get_y_et()
     print("Yет =", ex.y_et)
     print("Критерій вибору: min(Y)")
     min_y = ex.feedback_function_vector.min()
