@@ -67,14 +67,20 @@ if __name__ == '__main__':
     ex = Experiment(low_lim, up_lim, num_of_ex, num_of_fact, reg_coef)
 
     ex.random_fill()
-    print(ex.matrix)
+    print("Матриця факторів:\n", ex.matrix)
     ex.get_zero_factor_level_vector()
+    print("Нульовий рівень х0:\n", ex.zero_factor_level_vector)
     ex.get_factor_change_interval_vector()
+    print("dx:\n", ex.factor_change_interval_vector)
     ex.get_feedback_function_vector()
+    print("Значення функції відгуку:\n", ex.feedback_function_vector)
     ex.get_normalized_matrix()
-    print(ex.normalized_matrix)
+    print("Нормалізована матриця факторів:\n", ex.normalized_matrix)
     ex.get_y_et()
     print("Yет =", ex.y_et)
-
-    ex.feedback_function_vector.min()
-
+    print("Критерій вибору: min(Y)")
+    min_y = ex.feedback_function_vector.min()
+    print("Y =", min_y)
+    factors = ex.matrix[np.where(ex.feedback_function_vector == min_y)]
+    print("Значення факторів в точці плану:\n", factors)
+    # print("Y = a0 + a1*{0} + a2*{1} + a3*{2}".format([factor for factor in factors[0, :]]))
