@@ -3,26 +3,39 @@ from random import randint
 import numpy as np
 
 
-class TwoFactorExperiment():
+class TwoFactorExperiment:
     def __init__(self, y_min, y_max, m, p=0.99):
         self.number_of_exp = 3
         self.m = m
         self.p = p
         self.normalized_matrix = np.array([[-1, -1],
-                                           [-1, +1],
-                                           [+1, -1]])
-        self.feedback_func_matrix = np.array([[randint(y_min, y_max) for _ in range(m)] for _ in range(self.number_of_exp)])
+                                           [+1, -1],
+                                           [-1, +1]])
+        self.feedback_func_matrix = np.array(
+            [[randint(y_min, y_max) for i in range(self.m)] for _ in range(self.number_of_exp)])
+        self.feedback_func_matrix = np.array([[9, 10, 11, 15, 9],
+                                            [15, 14, 10, 12, 14],
+                                            [20, 18, 12, 10, 16]])
 
         self.mean_feedback_func_vector = self.feedback_func_matrix.mean(axis=1)
+
         self.variances = self.feedback_func_matrix.var(axis=1)
         self.major_deviation = sqrt(abs((2*(2*m-2))/(m*(m-4))))
-
         self.F_uv = self.get_F_uv()
         self.theta_uv = self.get_theta_uv()
         self.romanovsky_criterion = self.get_romanovsky_criterion()
         self.critical_romanovsky_criterion = self.get_critical_romanovsky_criterion()
-
         self.norm_coef = self.get_coef()
+
+    def get_variances(self):
+        variances = []
+        for row in range(self.number_of_exp):
+            variance = 0
+            for y in range(self.m):
+                variance += (self.feedback_func_matrix[row][y] - self.mean_feedback_func_vector[row])**2
+                print(variance)
+            variances.append(variance/self.m)
+        return variances
 
     def get_F_uv(self):
         F_uv = []
@@ -32,7 +45,7 @@ class TwoFactorExperiment():
                     if self.variances[i] >= self.variances[j]:
                         F_uv.append(self.variances[i]/self.variances[j])
                     else:
-                        F_uv.append(self.variances[i] / self.variances[j])
+                        F_uv.append(self.variances[j] / self.variances[i])
         return F_uv
 
     def get_theta_uv(self):
@@ -57,20 +70,23 @@ class TwoFactorExperiment():
 
     def start_check(self):
         for r in self.romanovsky_criterion:
-            if r>self.critical_romanovsky_criterion:
-                print("не підтверджується")
+            if r > self.critical_romanovsky_criterion:
+                print("Не підтверджується")
+
+    def naturalize_coef(self):
+
 
     def get_coef(self):
-        my = sum(self.mean_feedback_func_vector) / len(self.mean_feedback_func_vector)
-        mx1 = sum(self.normalized_matrix[:, 0]) / len(self.normalized_matrix[:, 0])
-        mx2 = sum(self.normalized_matrix[:, 1]) / len(self.normalized_matrix[:, 1])
-        a1 = sum(self.normalized_matrix[:, 0])**2 / len(self.normalized_matrix[:, 0])
-        a2 = sum(self.normalized_matrix[:, 0]*self.normalized_matrix[:, 1]) / len(self.normalized_matrix[:, 1])
-        a3 = sum(self.normalized_matrix[:, 1])**2 / len(self.normalized_matrix[:, 1])
-        a11 = sum(self.normalized_matrix[:, 0]*self.mean_feedback_func_vector) / len(self.normalized_matrix[:, 1])
-        a22 = sum(self.normalized_matrix[:, 1]*self.mean_feedback_func_vector) / len(self.normalized_matrix[:, 1])
+        my = self.mean_feedback_func_vector.mean()
+        mx1 = self.normalized_matrix[:, 0].mean()
+        mx2 = self.normalized_matrix[:, 1].mean()
+        a1 = ((self.normalized_matrix[:, 0])**2).mean()
+        a2 = (self.normalized_matrix[:, 0]*self.normalized_matrix[:, 1]).mean()
+        a3 = ((self.normalized_matrix[:, 1])**2).mean()
+        a11 = (self.normalized_matrix[:, 0]*self.mean_feedback_func_vector).mean()
+        a22 = (self.normalized_matrix[:, 1]*self.mean_feedback_func_vector).mean()
 
-        print("my = {}, mx1 = {}, mx2 = {}\na1 = {}, a2 = {}, a3 = {}, a11 = {}, a22 = {}".format(my, mx1, mx2, a1, a2, a3, a11, a22))
+        # print("my = {}, mx1 = {}, mx2 = {}\na1 = {}, a2 = {}, a3 = {}, a11 = {}, a22 = {}".format(my, mx1, mx2, a1, a2, a3, a11, a22))
 
         det = np.linalg.det(np.array([[1, mx1, mx2],
                                       [mx1, a1, a2],
@@ -87,13 +103,14 @@ class TwoFactorExperiment():
         b0 = det_b0 / det
         b1 = det_b1 / det
         b2 = det_b2 / det
-        return [b0, b1, b2]
+        return [b0.round(5), b1.round(5), b2.round(5)]
 
     def check_coef(self):
+        print("b exp   b th")
         for i in range(self.number_of_exp):
             y_exp = self.norm_coef[0] + self.norm_coef[1]*self.normalized_matrix[i][0] + self.norm_coef[2]*self.normalized_matrix[i][1]
             y_th = self.mean_feedback_func_vector[i]
-            print(y_exp, y_th)
+            print(y_exp,"  ", y_th)
 
 
 if __name__ == '__main__':
@@ -101,20 +118,15 @@ if __name__ == '__main__':
     y_min = -30
     m = 6
     p = 0.99
-    x1_min = -20
-    x1_max = 0
-    x2_min = -25
-    x2_max = 10
+    example = TwoFactorExperiment(y_min, y_max, m)
 
-    t = TwoFactorExperiment(y_min, y_max, m)
-    print("Матриця функцій відгуку:\n{}".format(t.feedback_func_matrix))
-    print("Сер. ар. функцій відгуку:\n{}".format(t.mean_feedback_func_vector))
-    print("Дисперсії:\n{}".format(t.variances))
-    print("Основне відхилення: {}".format(t.major_deviation))
-    print("F_uv:\n{}".format(t.F_uv))
-    print("Theta uv:\n{}".format(t.theta_uv))
-    print("Критерії Романовсткого: \n{}".format(t.romanovsky_criterion))
-    print("Критичне значення критерія Романовського: {}".format(t.critical_romanovsky_criterion))
-    t.start_check()
-    print("Норм. коеф {}".format(t.norm_coef))
-    t.check_coef()
+    print(example.feedback_func_matrix)
+    print("Сер. ар. функцій відгуку:\n{}".format(example.mean_feedback_func_vector))
+    print("Дисперсії:\n{}".format(example.variances))
+    print("Основне відхилення: {}".format(example.major_deviation))
+    print("F_uv:\n{}".format(example.F_uv))
+    print("Theta uv:\n{}".format(example.theta_uv))
+    print("Критерії Романовсткого: \n{}".format(example.romanovsky_criterion))
+    print("Критичне значення критерія Романовського: {}".format(example.critical_romanovsky_criterion))
+    print("Норм. коеф {}".format(example.norm_coef))
+    example.check_coef()
