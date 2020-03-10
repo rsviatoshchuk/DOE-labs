@@ -22,6 +22,8 @@ class TwoFactorExperiment():
         self.romanovsky_criterion = self.get_romanovsky_criterion()
         self.critical_romanovsky_criterion = self.get_critical_romanovsky_criterion()
 
+        self.norm_coef = self.get_coef()
+
     def get_F_uv(self):
         F_uv = []
         for i in range(self.number_of_exp):
@@ -53,6 +55,46 @@ class TwoFactorExperiment():
                  20: 6}
         return rom_crit[self.p][m_rom[self.m]]
 
+    def start_check(self):
+        for r in self.romanovsky_criterion:
+            if r>self.critical_romanovsky_criterion:
+                print("не підтверджується")
+
+    def get_coef(self):
+        my = sum(self.mean_feedback_func_vector) / len(self.mean_feedback_func_vector)
+        mx1 = sum(self.normalized_matrix[:, 0]) / len(self.normalized_matrix[:, 0])
+        mx2 = sum(self.normalized_matrix[:, 1]) / len(self.normalized_matrix[:, 1])
+        a1 = sum(self.normalized_matrix[:, 0])**2 / len(self.normalized_matrix[:, 0])
+        a2 = sum(self.normalized_matrix[:, 0]*self.normalized_matrix[:, 1]) / len(self.normalized_matrix[:, 1])
+        a3 = sum(self.normalized_matrix[:, 1])**2 / len(self.normalized_matrix[:, 1])
+        a11 = sum(self.normalized_matrix[:, 0]*self.mean_feedback_func_vector) / len(self.normalized_matrix[:, 1])
+        a22 = sum(self.normalized_matrix[:, 1]*self.mean_feedback_func_vector) / len(self.normalized_matrix[:, 1])
+
+        print("my = {}, mx1 = {}, mx2 = {}\na1 = {}, a2 = {}, a3 = {}, a11 = {}, a22 = {}".format(my, mx1, mx2, a1, a2, a3, a11, a22))
+
+        det = np.linalg.det(np.array([[1, mx1, mx2],
+                                      [mx1, a1, a2],
+                                      [mx2, a2, a3]]))
+        det_b0 = np.linalg.det(np.array([[my, mx1, mx2],
+                                         [a11, a1, a2],
+                                         [a22, a2, a3]]))
+        det_b1 = np.linalg.det(np.array([[1, my, mx2],
+                                         [mx1, a11, a2],
+                                         [mx2, a22, a3]]))
+        det_b2 = np.linalg.det(np.array([[1, mx1, my],
+                                         [mx1, a1, a11],
+                                         [mx2, a2, a22]]))
+        b0 = det_b0 / det
+        b1 = det_b1 / det
+        b2 = det_b2 / det
+        return [b0, b1, b2]
+
+    def check_coef(self):
+        for i in range(self.number_of_exp):
+            y_exp = self.norm_coef[0] + self.norm_coef[1]*self.normalized_matrix[i][0] + self.norm_coef[2]*self.normalized_matrix[i][1]
+            y_th = self.mean_feedback_func_vector[i]
+            print(y_exp, y_th)
+
 
 if __name__ == '__main__':
     y_max = 70
@@ -65,11 +107,14 @@ if __name__ == '__main__':
     x2_max = 10
 
     t = TwoFactorExperiment(y_min, y_max, m)
-    print(t.feedback_func_matrix)
-    print(t.mean_feedback_func_vector)
-    print(t.variances)
-    print(t.major_deviation)
-    print(t.F_uv)
-    print(t.theta_uv)
-    print(t.romanovsky_criterion)
-    print(t.critical_romanovsky_criterion)
+    print("Матриця функцій відгуку:\n{}".format(t.feedback_func_matrix))
+    print("Сер. ар. функцій відгуку:\n{}".format(t.mean_feedback_func_vector))
+    print("Дисперсії:\n{}".format(t.variances))
+    print("Основне відхилення: {}".format(t.major_deviation))
+    print("F_uv:\n{}".format(t.F_uv))
+    print("Theta uv:\n{}".format(t.theta_uv))
+    print("Критерії Романовсткого: \n{}".format(t.romanovsky_criterion))
+    print("Критичне значення критерія Романовського: {}".format(t.critical_romanovsky_criterion))
+    t.start_check()
+    print("Норм. коеф {}".format(t.norm_coef))
+    t.check_coef()
