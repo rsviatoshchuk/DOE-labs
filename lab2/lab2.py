@@ -4,28 +4,44 @@ import numpy as np
 
 
 class TwoFactorExperiment:
-    def __init__(self, y_min, y_max, m, p=0.99):
+    def __init__(self, y_min, y_max, m, x1min, x1max, x2min, x2max, p=0.99):
+        self.x1min = x1min
+        self.x1max = x1max
+        self.x2min = x2min
+        self.x2max = x2max
+
         self.number_of_exp = 3
         self.m = m
         self.p = p
         self.normalized_matrix = np.array([[-1, -1],
-                                           [+1, -1],
-                                           [-1, +1]])
-        self.feedback_func_matrix = np.array(
-            [[randint(y_min, y_max) for i in range(self.m)] for _ in range(self.number_of_exp)])
-        self.feedback_func_matrix = np.array([[9, 10, 11, 15, 9],
-                                            [15, 14, 10, 12, 14],
-                                            [20, 18, 12, 10, 16]])
+                                           [-1, +1],
+                                           [+1, -1]])
+        self.naturalized_matrix = [[self.x1min, self.x2min],
+                                    [self.x1min, self.x2max],
+                                    [self.x1max, self.x2min]]
 
-        self.mean_feedback_func_vector = self.feedback_func_matrix.mean(axis=1)
+        while True:
+            self.feedback_func_matrix = np.array(
+                [[randint(y_min, y_max) for i in range(self.m)] for _ in range(self.number_of_exp)])
+            # self.feedback_func_matrix = np.array([[9, 10, 11, 15, 9],
+            #                                     [15, 14, 10, 12, 14],
+            #                                     [20, 18, 12, 10, 16]])
 
-        self.variances = self.feedback_func_matrix.var(axis=1)
-        self.major_deviation = sqrt(abs((2*(2*m-2))/(m*(m-4))))
-        self.F_uv = self.get_F_uv()
-        self.theta_uv = self.get_theta_uv()
-        self.romanovsky_criterion = self.get_romanovsky_criterion()
-        self.critical_romanovsky_criterion = self.get_critical_romanovsky_criterion()
-        self.norm_coef = self.get_coef()
+            self.mean_feedback_func_vector = self.feedback_func_matrix.mean(axis=1)
+
+            self.variances = self.feedback_func_matrix.var(axis=1)
+            self.major_deviation = sqrt(abs((2*(2*m-2))/(m*(m-4))))
+            self.F_uv = self.get_F_uv()
+            self.theta_uv = self.get_theta_uv()
+            self.romanovsky_criterion = self.get_romanovsky_criterion()
+            self.critical_romanovsky_criterion = self.get_critical_romanovsky_criterion()
+            if self.start_check():
+                self.norm_coef = self.get_coef()
+                self.nat_coef = self.naturalize_coef()
+                break
+            else:
+                self.m += 2
+                print("Нове m = {}".format(self.m))
 
     def get_variances(self):
         variances = []
@@ -71,10 +87,20 @@ class TwoFactorExperiment:
     def start_check(self):
         for r in self.romanovsky_criterion:
             if r > self.critical_romanovsky_criterion:
-                print("Не підтверджується")
+                print("Не підтверджується, додаємо до m = m + 2(обумовлено таблицею)")
+                return False
+        return True
+
 
     def naturalize_coef(self):
-
+        delt_x1 = abs(self.x1max - self.x1min)/2
+        delt_x2 = abs(self.x2max - self.x2min) / 2
+        x10 = (self.x1max + self.x1min) / 2
+        x20 = (self.x2max + self.x2min) / 2
+        a0 = self.norm_coef[0] - self.norm_coef[1]*x10/delt_x1 - self.norm_coef[2]*x20/delt_x2
+        a1 = self.norm_coef[1]/delt_x1
+        a2 = self.norm_coef[2]/delt_x2
+        return [a0.round(5), a1.round(5), a2.round(5)]
 
     def get_coef(self):
         my = self.mean_feedback_func_vector.mean()
@@ -105,28 +131,49 @@ class TwoFactorExperiment:
         b2 = det_b2 / det
         return [b0.round(5), b1.round(5), b2.round(5)]
 
-    def check_coef(self):
+    def check_norm_coef(self):
         print("b exp   b th")
         for i in range(self.number_of_exp):
             y_exp = self.norm_coef[0] + self.norm_coef[1]*self.normalized_matrix[i][0] + self.norm_coef[2]*self.normalized_matrix[i][1]
             y_th = self.mean_feedback_func_vector[i]
-            print(y_exp,"  ", y_th)
+            print(y_exp.round(4), "  ", y_th.round(4))
+
+            if y_exp.round(4) != y_th.round(4):
+                print("Невідповідність")
+
+    def check_nat_coef(self):
+        print("a exp      a th")
+        for i in range(self.number_of_exp):
+            y_exp = self.nat_coef[0] + self.nat_coef[1]*self.naturalized_matrix[i][0] + self.nat_coef[2]*self.naturalized_matrix[i][1]
+            y_th = self.mean_feedback_func_vector[i]
+            print(y_exp.round(4), "  ", y_th.round(4))
+
+            if y_exp.round(3) != y_th.round(3):
+                print("Невідповідність")
 
 
 if __name__ == '__main__':
     y_max = 70
     y_min = -30
+
+    x1min = -30
+    x1max = 0
+    x2min = -25
+    x2max = 10
+
     m = 6
     p = 0.99
-    example = TwoFactorExperiment(y_min, y_max, m)
+    example = TwoFactorExperiment(y_min, y_max, m, x1min, x1max, x2min, x2max)
 
-    print(example.feedback_func_matrix)
-    print("Сер. ар. функцій відгуку:\n{}".format(example.mean_feedback_func_vector))
-    print("Дисперсії:\n{}".format(example.variances))
+    print("Матриця функцій відгуку:\n{}".format(example.feedback_func_matrix))
+    print("Сер. ар. функцій відгуку: {}".format(example.mean_feedback_func_vector))
+    print("Дисперсії: {}".format(example.variances))
     print("Основне відхилення: {}".format(example.major_deviation))
-    print("F_uv:\n{}".format(example.F_uv))
-    print("Theta uv:\n{}".format(example.theta_uv))
-    print("Критерії Романовсткого: \n{}".format(example.romanovsky_criterion))
+    print("F_uv: {}".format(example.F_uv))
+    print("Theta uv: {}".format(example.theta_uv))
+    print("Критерії Романовського: {}".format(example.romanovsky_criterion))
     print("Критичне значення критерія Романовського: {}".format(example.critical_romanovsky_criterion))
     print("Норм. коеф {}".format(example.norm_coef))
-    example.check_coef()
+    example.check_norm_coef()
+    print("Натуралізовані. коеф {}".format(example.nat_coef))
+    example.check_nat_coef()
