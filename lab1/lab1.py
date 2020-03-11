@@ -21,6 +21,7 @@ class Experiment:
         self.get_zero_factor_level_vector()
         self.get_factor_change_interval_vector()
         self.get_feedback_function_vector()
+        self.get_y_et()
         self.get_normalized_matrix()
 
     def random_fill(self):
