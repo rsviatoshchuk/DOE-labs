@@ -16,14 +16,23 @@ class ThreeFactorExperiment:
         self.number_of_exp = 4
         self.m = m
         self.p = p
-        self.normalized_matrix = np.array([[+1, -1, -1, -1],
-                                           [+1, -1, +1, +1],
-                                           [+1, +1, -1, +1],
-                                           [+1, +1, +1, -1]])
+        self.normalized_matrix = np.array([[+1, -1, -1, -1, +1, +1, +1, -1],
+                                           [+1, -1, +1, +1, +1, -1, -1, +1],
+                                           [+1, +1, -1, +1, -1, +1, -1, +1],
+                                           [+1, +1, +1, -1, -1, -1, +1, -1],
+                                           [+1, +1, -1, -1, -1, -1, +1, +1],
+                                           [+1, +1, -1, +1, -1, +1, -1, -1],
+                                           [+1, +1, +1, -1, +1, -1, -1, -1],
+                                           [+1, +1, +1, +1, +1, +1, +1, +1]])
         self.naturalized_matrix = np.array([[self.x1min, self.x2min, self.x3min],
                                             [self.x1min, self.x2max, self.x3max],
                                             [self.x1max, self.x2min, self.x3max],
-                                            [self.x1max, self.x2max, self.x3min]])
+                                            [self.x1max, self.x2max, self.x3min],
+                                            [self.x1max, self.x2min, self.x3min],
+                                            [self.x1max, self.x2min, self.x3max],
+                                            [self.x1max, self.x2max, self.x3min],
+                                            [self.x1max, self.x2max, self.x3max]
+                                            ])
         # Критерій Кохрена
         while True:
             self.feedback_func_matrix = np.array(
