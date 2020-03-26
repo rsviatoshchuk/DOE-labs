@@ -24,7 +24,7 @@ class ThreeFactorFractionalExperiment:
                                             [self.x1min, self.x2max, self.x3max],
                                             [self.x1max, self.x2min, self.x3max],
                                             [self.x1max, self.x2max, self.x3min]])
-        # Критерій Кохрена
+        # Перевірка критеріїв
         while True:
             self.feedback_func_matrix = np.array(
                 [[randint(y_min, y_max) for i in range(self.m)] for _ in range(self.number_of_exp)])
@@ -36,14 +36,17 @@ class ThreeFactorFractionalExperiment:
             self.check_nat_coef()
             if self.cochran_check():
                 print("Дисперсії однорідні")
-                break
             else:
                 print("Згідно критерія Кохрена дисперсії неоднорідні. Отже потрібно збільшити m")
                 self.m += 1
+                continue
 
-        self.student_check()
+            self.student_check()
 
-        self.fisher_check()
+            if self.fisher_check():
+                break
+            else:
+                self.m += 1
 
     def get_f_critical(self, p, f3, f4):
         return f.ppf(p, f3, f4)
@@ -183,8 +186,10 @@ class ThreeFactorFractionalExperiment:
 
         if f <= f_critical:
             print("Рівняння лінійної регресії адекватне")
+            return True
         else:
             print("Рівняння лінійної регресії неадекватне")
+            return False
 
 
 if __name__ == '__main__':
