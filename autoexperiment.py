@@ -23,7 +23,7 @@ class Experiment:
         star_dots_matrix = []
 
         for col in range(num_of_factors):
-            row = [0]*num_of_factors
+            row = [0] * num_of_factors
 
             row[col] = -l
             star_dots_matrix.append(row[:])
@@ -33,23 +33,37 @@ class Experiment:
         return numpy.array(star_dots_matrix)
 
     def get_interaction_part(self, num_of_factors):
-        pass
+        if num_of_factors == 2:
+            return numpy.array([[+1], [+1], [-1], [-1]])
+        elif num_of_factors == 3:
+            matrix = numpy.array([[+1, +1, +1, -1],
+                                  [+1, -1, -1, +1],
+                                  [-1, +1, -1, +1],
+                                  [-1, -1, +1, -1],
+                                  [-1, -1, +1, +1],
+                                  [-1, +1, -1, -1],
+                                  [+1, -1, -1, -1],
+                                  [+1, +1, +1, +1]])
+            return matrix
+        else:
+            raise ValueError
 
     def get_quadratic_part(self, num_of_factors, l):
         quadratic_matrix = numpy.append(self.get_2level_normalized_matrix(num_of_factors),
                                         self.get_5level_part(num_of_factors, l), axis=0)
 
-        return quadratic_matrix**2
+        return quadratic_matrix ** 2
 
     def get_l_central(self, k, p):
-        return sqrt(sqrt((2**(k-p-2))*(2**(k-p)+2*k+1))-2**(k-p-1))
-    
+        return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
+
     def get_l_rototable(self, k):
         return sqrt(k)
 
 
 a = Experiment()
-#print(a.get_2level_normalized_matrix(3))
+# print(a.get_2level_normalized_matrix(3))
 # print(a.get_5level_part(5, 1.44))
 print(a.get_quadratic_part(3, 1.73))
 print(a.get_l_central(3, 0))
+print(a.get_interaction_part(3))
