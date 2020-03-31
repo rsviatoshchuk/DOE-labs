@@ -5,7 +5,28 @@ from scipy.stats import t, f
 
 class Experiment:
     def __init__(self):
-        self.normalized_matrix = None
+        # Характеристики експерименту
+        self.levels = None
+        self.experiments = None
+        self.fractionality = None
+
+        # Флаги
+        self.interaction_flag = None
+        self.quadr_flag = None
+
+        # Нормалізовані частини
+        self.norm_matrix = None
+        self.interaction_part = None
+        self.quadr_part = None
+
+        # Натуралізовані частини
+        self.nat_matrix = None
+        self.nat_interaction_part = None
+        self.nat_quadr_part = None
+        
+    def set_norm_matr(self, matrix):
+        """func for manual input of norm matrix"""
+        self.normalized_matrix = matrix
 
     def get_2level_norm_matrix(self, num_of_factors):
         def conv(str_el):
@@ -81,6 +102,7 @@ class Experiment:
         self.normalized_matrix = numpy.append(self.get_norm_matrix_inter(num_of_factors, l),
                                               self.get_quadratic_part(num_of_factors, l), axis=1)
         return self.normalized_matrix
+
 
 a = Experiment()
 print("\nНормалізована матриця планування(2 рівні):")
