@@ -6,11 +6,14 @@ from scipy.stats import t, f
 class Experiment:
     def __init__(self):
         # Характеристики експерименту
-        self.levels = None
+        self.factors = None
         self.experiments = None
-        self.fractionality = None
+        self.fractionality = None           # 0 for full factorial experiment
+        self.l = 2
+        self.factors_range = None
 
         # Флаги
+        self.five_level_flag = None
         self.interaction_flag = None
         self.quadr_flag = None
 
@@ -23,40 +26,57 @@ class Experiment:
         self.nat_matrix = None
         self.nat_interaction_part = None
         self.nat_quadr_part = None
-        
-    def set_norm_matr(self, matrix):
-        """func for manual input of norm matrix"""
-        self.normalized_matrix = matrix
 
-    def get_2level_norm_matrix(self, num_of_factors):
+        # Функції відгуку
+        self.resp_var_matrix = None
+
+    def set_experiment(self, num_of_factors, fractionality=0, interaction=False, quadratic=False, fivelevel=False):
+        self.factors = num_of_factors
+        self.five_level_flag = fivelevel
+        self.fractionality = fractionality
+        self.interaction_flag = interaction
+        self.quadr_flag = quadratic
+
+    def set_norm_matr(self, matrix):
+        """func for manual norm matrix"""
+        self.norm_matrix = matrix
+
+    def set_response_variable_matrix(self, matrix):
+        self.resp_var_matrix = matrix
+
+    def gen_norm_matr(self):
+        """func generate normalized matrix"""
         def conv(str_el):
             if str_el == "0":
                 str_el = "-1"
             return int(str_el)
         vconv = numpy.vectorize(conv)
 
-        num_of_levels = 2  # for future
-        form = "{{0:0{}b}}".format(num_of_factors)  # formatting for getting 0001 instead 1
-        str_array = numpy.array([list(form.format(i)[::-1]) for i in range(num_of_levels ** num_of_factors)])
-        return vconv(str_array)
+        form = "{{0:0{}b}}".format(self.factors)  # formatting for getting 0001 instead 1
+        str_array = numpy.array([list(form.format(i)[::-1]) for i in range(2 ** self.factors)])
+        num_array = vconv(str_array)[:2**(self.factors-self.fractionality), :]
 
-    def get_5level_part(self, num_of_factors, l):
-        star_dots_matrix = []
+        # code for 5-level part
+        if self.five_level_flag:
+            five_level_part = []
 
-        for col in range(num_of_factors):
-            row = [0] * num_of_factors
+            for col in range(self.factors):
+                row = [0] * self.factors
 
-            row[col] = -l
-            star_dots_matrix.append(row[:])
-            row[col] = l
-            star_dots_matrix.append(row[:])
+                row[col] = -self.l
+                five_level_part.append(row[:])
+                row[col] = self.l
+                five_level_part.append(row[:])
 
-        return numpy.array(star_dots_matrix)
+            num_array = numpy.append(num_array, numpy.array(five_level_part), axis=0)
 
-    def get_interaction_part(self, num_of_factors):
-        if num_of_factors == 2:
-            return numpy.array([[+1], [+1], [-1], [-1]])
-        elif num_of_factors == 3:
+        self.norm_matrix = num_array
+
+    def gen_interaction_part(self):
+        """func generate interaction part(only for 2 and 3 factors)"""
+        if self.factors == 2:
+            matrix = numpy.array([[+1], [+1], [-1], [-1]])
+        elif self.factors == 3:
             matrix = numpy.array([[+1, +1, +1, -1],
                                   [+1, -1, -1, +1],
                                   [-1, +1, -1, +1],
@@ -65,15 +85,13 @@ class Experiment:
                                   [-1, +1, -1, -1],
                                   [+1, -1, -1, -1],
                                   [+1, +1, +1, +1]])
-            return matrix
         else:
             raise ValueError
 
-    def get_quadratic_part(self, num_of_factors, l):
-        quadratic_matrix = numpy.append(self.get_2level_norm_matrix(num_of_factors),
-                                        self.get_5level_part(num_of_factors, l), axis=0)
+        self.interaction_part = matrix
 
-        return quadratic_matrix ** 2
+    def gen_quadratic_part(self):
+        self.quadr_part = self.norm_matrix**2
 
     def get_l_central(self, k, p):
         return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
@@ -81,50 +99,30 @@ class Experiment:
     def get_l_rototable(self, k):
         return sqrt(k)
 
-    def get_norm_matrix(self, num_of_factors, l):
-        self.normalized_matrix = numpy.append(self.get_2level_norm_matrix(num_of_factors),
-                                              self.get_5level_part(num_of_factors, l), axis=0)
-        return self.normalized_matrix
-
-    def get_norm_matrix_inter(self, num_of_factors, l):
-        interaction = self.get_interaction_part(num_of_factors)
-        interaction = numpy.append(interaction,
-                                   numpy.zeros((2*num_of_factors, interaction.shape[1])), axis=0)
-        self.normalized_matrix = numpy.append(self.get_norm_matrix(num_of_factors, l), interaction, axis=1)
-        return self.normalized_matrix
-
-    def get_norm_matrix_quad(self, num_of_factors, l):
-        self.normalized_matrix = numpy.append(self.get_norm_matrix(num_of_factors, l),
-                                              self.get_quadratic_part(num_of_factors, l), axis=1)
-        return self.normalized_matrix
-
-    def get_norm_matrix_inter_quad(self, num_of_factors, l):
-        self.normalized_matrix = numpy.append(self.get_norm_matrix_inter(num_of_factors, l),
-                                              self.get_quadratic_part(num_of_factors, l), axis=1)
-        return self.normalized_matrix
-
 
 a = Experiment()
-print("\nНормалізована матриця планування(2 рівні):")
-print(a.get_2level_norm_matrix(3))
+a.set_experiment(3, fivelevel=True)
+a.gen_norm_matr()
+a.gen_interaction_part()
+a.gen_quadratic_part()
 
-print("\nЗіркові точки:")
-print(a.get_5level_part(3, 1.44))
+print("\nНормалізована матриця планування:")
+print(a.norm_matrix)
 
 print("\nВзаємодія:")
-print(a.get_interaction_part(3))
+print(a.interaction_part)
 
 print("\nКвадратична частина:")
-print(a.get_quadratic_part(3, 1.73))
+print(a.quadr_part)
 
-print("\nНормалізована матриця планування(5 рівнів):")
-print(a.get_norm_matrix(3, 1.41))
-
-print("\nНормалізована матриця планування  з ефектом взаємодії:")
-print(a.get_norm_matrix_inter(3, 1.41))
-
-print("\nНормалізована матриця планування  з квадратичними членами:")
-print(a.get_norm_matrix_quad(3, 1.41))
-
-print("\nНормалізована матриця планування  з ефектом взаємодії та квадратичними членами:")
-print(a.get_norm_matrix_inter_quad(3, 2))
+# print("\nНормалізована матриця планування(5 рівнів):")
+# print(a.get_norm_matrix(3, 1.41))
+#
+# print("\nНормалізована матриця планування  з ефектом взаємодії:")
+# print(a.get_norm_matrix_inter(3, 1.41))
+#
+# print("\nНормалізована матриця планування  з квадратичними членами:")
+# print(a.get_norm_matrix_quad(3, 1.41))
+#
+# print("\nНормалізована матриця планування  з ефектом взаємодії та квадратичними членами:")
+# print(a.get_norm_matrix_inter_quad(3, 2))
