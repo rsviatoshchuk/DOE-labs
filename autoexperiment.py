@@ -7,7 +7,7 @@ class Experiment:
     def __init__(self):
         self.normalized_matrix = None
 
-    def get_2level_normalized_matrix(self, num_of_factors):
+    def get_2level_norm_matrix(self, num_of_factors):
         def conv(str_el):
             if str_el == "0":
                 str_el = "-1"
@@ -49,7 +49,7 @@ class Experiment:
             raise ValueError
 
     def get_quadratic_part(self, num_of_factors, l):
-        quadratic_matrix = numpy.append(self.get_2level_normalized_matrix(num_of_factors),
+        quadratic_matrix = numpy.append(self.get_2level_norm_matrix(num_of_factors),
                                         self.get_5level_part(num_of_factors, l), axis=0)
 
         return quadratic_matrix ** 2
@@ -60,10 +60,49 @@ class Experiment:
     def get_l_rototable(self, k):
         return sqrt(k)
 
+    def get_norm_matrix(self, num_of_factors, l):
+        self.normalized_matrix = numpy.append(self.get_2level_norm_matrix(num_of_factors),
+                                              self.get_5level_part(num_of_factors, l), axis=0)
+        return self.normalized_matrix
+
+    def get_norm_matrix_inter(self, num_of_factors, l):
+        interaction = self.get_interaction_part(num_of_factors)
+        interaction = numpy.append(interaction,
+                                   numpy.zeros((2*num_of_factors, interaction.shape[1])), axis=0)
+        self.normalized_matrix = numpy.append(self.get_norm_matrix(num_of_factors, l), interaction, axis=1)
+        return self.normalized_matrix
+
+    def get_norm_matrix_quad(self, num_of_factors, l):
+        self.normalized_matrix = numpy.append(self.get_norm_matrix(num_of_factors, l),
+                                              self.get_quadratic_part(num_of_factors, l), axis=1)
+        return self.normalized_matrix
+
+    def get_norm_matrix_inter_quad(self, num_of_factors, l):
+        self.normalized_matrix = numpy.append(self.get_norm_matrix_inter(num_of_factors, l),
+                                              self.get_quadratic_part(num_of_factors, l), axis=1)
+        return self.normalized_matrix
 
 a = Experiment()
-# print(a.get_2level_normalized_matrix(3))
-# print(a.get_5level_part(5, 1.44))
-print(a.get_quadratic_part(3, 1.73))
-print(a.get_l_central(3, 0))
+print("\nНормалізована матриця планування(2 рівні):")
+print(a.get_2level_norm_matrix(3))
+
+print("\nЗіркові точки:")
+print(a.get_5level_part(3, 1.44))
+
+print("\nВзаємодія:")
 print(a.get_interaction_part(3))
+
+print("\nКвадратична частина:")
+print(a.get_quadratic_part(3, 1.73))
+
+print("\nНормалізована матриця планування(5 рівнів):")
+print(a.get_norm_matrix(3, 1.41))
+
+print("\nНормалізована матриця планування  з ефектом взаємодії:")
+print(a.get_norm_matrix_inter(3, 1.41))
+
+print("\nНормалізована матриця планування  з квадратичними членами:")
+print(a.get_norm_matrix_quad(3, 1.41))
+
+print("\nНормалізована матриця планування  з ефектом взаємодії та квадратичними членами:")
+print(a.get_norm_matrix_inter_quad(3, 2))
