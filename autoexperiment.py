@@ -35,7 +35,7 @@ class Experiment:
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
 
         self.factors = num_of_factors
-        self.factors_range = factors_range
+        self.factors_range = numpy.array(factors_range)
         self.resp_var_range = response_var_range
 
         self.five_level_flag = fivelevel
@@ -104,6 +104,18 @@ class Experiment:
     def gen_quadratic_part(self):
         self.quadr_part = self.norm_matrix**2
 
+    def naturalize(self):
+        average_x = self.factors_range.mean(axis=1)
+        delta_x = average_x - self.factors_range[:, 0]
+
+        self.nat_matrix = self.norm_matrix * delta_x + average_x
+
+        # if self.interaction_flag:
+        #     self.nat_interaction_part =
+        if self.quadr_flag:
+            self.nat_quadr_part = self.nat_matrix ** 2
+
+
     def get_l_central(self, k, p):
         return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
 
@@ -112,11 +124,12 @@ class Experiment:
 
 
 a = Experiment()
-a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666))
+a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666), interaction=True, quadratic=True, fivelevel=True)
 a.gen_norm_matr()
 a.gen_interaction_part()
 a.gen_quadratic_part()
 a.gen_random_response_var(3)
+a.naturalize()
 
 print("\nНормалізована матриця планування:")
 print(a.norm_matrix)
@@ -129,3 +142,12 @@ print(a.quadr_part)
 
 print("Матриця функції відгуку")
 print(a.resp_var_matrix)
+
+print("\nНатуралізована матриця планування:")
+print(a.nat_matrix)
+
+print("\nНатуралізована заємодія:")
+print(a.nat_interaction_part)
+
+print("\nНатуралізована квадратична частина:")
+print(a.nat_quadr_part)
