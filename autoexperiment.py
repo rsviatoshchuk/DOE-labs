@@ -11,6 +11,7 @@ class Experiment:
         self.fractionality = None           # 0 for full factorial experiment
         self.l = 2
         self.factors_range = None
+        self.resp_var_range = None
 
         # Флаги
         self.five_level_flag = None
@@ -30,8 +31,13 @@ class Experiment:
         # Функції відгуку
         self.resp_var_matrix = None
 
-    def set_experiment(self, num_of_factors, fractionality=0, interaction=False, quadratic=False, fivelevel=False):
+    def set_experiment(self, num_of_factors, factors_range, response_var_range,
+                       fractionality=0, interaction=False, quadratic=False, fivelevel=False):
+
         self.factors = num_of_factors
+        self.factors_range = factors_range
+        self.resp_var_range = response_var_range
+
         self.five_level_flag = fivelevel
         self.fractionality = fractionality
         self.interaction_flag = interaction
@@ -43,6 +49,11 @@ class Experiment:
 
     def set_response_variable_matrix(self, matrix):
         self.resp_var_matrix = matrix
+
+    def gen_random_response_var(self, m):
+        self.resp_var_matrix = numpy.random.uniform(low=self.resp_var_range[0],
+                                                    high=self.resp_var_range[1],
+                                                    size=(len(self.norm_matrix), m))
 
     def gen_norm_matr(self):
         """func generate normalized matrix"""
@@ -101,10 +112,11 @@ class Experiment:
 
 
 a = Experiment()
-a.set_experiment(3, fivelevel=True)
+a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666))
 a.gen_norm_matr()
 a.gen_interaction_part()
 a.gen_quadratic_part()
+a.gen_random_response_var(3)
 
 print("\nНормалізована матриця планування:")
 print(a.norm_matrix)
@@ -115,14 +127,5 @@ print(a.interaction_part)
 print("\nКвадратична частина:")
 print(a.quadr_part)
 
-# print("\nНормалізована матриця планування(5 рівнів):")
-# print(a.get_norm_matrix(3, 1.41))
-#
-# print("\nНормалізована матриця планування  з ефектом взаємодії:")
-# print(a.get_norm_matrix_inter(3, 1.41))
-#
-# print("\nНормалізована матриця планування  з квадратичними членами:")
-# print(a.get_norm_matrix_quad(3, 1.41))
-#
-# print("\nНормалізована матриця планування  з ефектом взаємодії та квадратичними членами:")
-# print(a.get_norm_matrix_inter_quad(3, 2))
+print("Матриця функції відгуку")
+print(a.resp_var_matrix)
