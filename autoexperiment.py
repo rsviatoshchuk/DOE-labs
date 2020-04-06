@@ -1,4 +1,5 @@
 import numpy
+from prettytable import PrettyTable
 from math import sqrt
 from scipy.stats import t, f
 from itertools import combinations
@@ -29,9 +30,10 @@ class Experiment:
         self.norm_matrix = None
 
         # Натуралізовані частини
-        self.nat_matrix = None
+        self.nat_main_part = None
         self.nat_interaction_part = None
         self.nat_quadr_part = None
+        self.nat_matrix = None
 
         # Функції відгуку
         self.resp_var_matrix = None
@@ -56,6 +58,7 @@ class Experiment:
         self.resp_var_matrix = matrix
 
     def gen_random_response_var(self, m):
+        self.experiments = m
         self.resp_var_matrix = numpy.random.uniform(low=self.resp_var_range[0],
                                                     high=self.resp_var_range[1],
                                                     size=(len(self.main_part), m))
@@ -120,13 +123,16 @@ class Experiment:
         average_x = self.factors_ranges.mean(axis=1)
         delta_x = average_x - self.factors_ranges[:, 0]
 
-        self.nat_matrix = self.main_part * delta_x + average_x
+        self.nat_main_part = self.main_part * delta_x + average_x
 
-        # if self.interaction_flag:
-        #     self.nat_interaction_part =
+        if self.interaction_flag:
+            average_inter = self.interaction_ranges.mean(axis=1)
+            delta_inter = average_inter - self.interaction_ranges[:, 0]
+
+            self.nat_interaction_part = self.interaction_part * delta_inter + average_inter
 
         if self.quadr_flag:
-            self.nat_quadr_part = self.nat_matrix ** 2
+            self.nat_quadr_part = self.nat_main_part ** 2
 
     def gen_norm_matrix(self):
 
@@ -148,6 +154,57 @@ class Experiment:
         if self.quadr_flag:
             self.norm_matrix = numpy.append(self.main_part, self.quadr_part, axis=1)
 
+    def gen_nat_matrix(self):
+
+        if self.interaction_flag:
+            matrix = numpy.append(self.nat_main_part, self.nat_interaction_part, axis=1)
+            if self.quadr_flag:
+                self.nat_matrix = numpy.append(matrix, self.nat_quadr_part, axis=1)
+                return
+            else:
+                self.nat_matrix = matrix
+                return
+        if self.quadr_flag:
+            self.nat_matrix = numpy.append(self.nat_main_part, self.nat_quadr_part, axis=1)
+
+    def print_norm_matrix(self):
+        norm_matr = PrettyTable()
+        table_head = ["Experiment #"]
+        for i in range(self.factors):
+            table_head.append(f"x{i+1}")
+        if self.interaction_flag:
+            for i in self.interaction_combinations:
+                table_head.append(f"x{i}")
+        if self.quadr_flag:
+            for i in range(self.factors):
+                table_head.append(f"x{i+1}{i+1}")
+        for i in range(self.experiments):
+            table_head.append(f"y{i + 1}")
+        norm_matr.field_names = table_head
+
+        for i in range(self.norm_matrix.shape[0]):
+            norm_matr.add_row([i + 1, *self.norm_matrix[i], *self.resp_var_matrix[i]])
+        print(norm_matr)
+
+    def print_nat_matrix(self):
+        nat_matr = PrettyTable()
+        table_head = ["Experiment #"]
+        for i in range(self.factors):
+            table_head.append(f"x{i+1}")
+        if self.interaction_flag:
+            for i in self.interaction_combinations:
+                table_head.append(f"x{i}")
+        if self.quadr_flag:
+            for i in range(self.factors):
+                table_head.append(f"x{i+1}{i+1}")
+        for i in range(self.experiments):
+            table_head.append(f"y{i + 1}")
+        nat_matr.field_names = table_head
+
+        for i in range(self.nat_matrix.shape[0]):
+            nat_matr.add_row([i + 1, *self.nat_matrix[i], *self.resp_var_matrix[i]])
+        print(nat_matr)
+
     def get_l_central(self, k, p):
         return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
 
@@ -163,6 +220,7 @@ a.gen_quadratic_part()
 a.gen_norm_matrix()
 a.gen_random_response_var(3)
 a.naturalize()
+a.gen_nat_matrix()
 
 print("\nМежі факторів:")
 print(a.factors_ranges)
@@ -196,3 +254,9 @@ print(a.nat_interaction_part)
 
 print("\nНатуралізована квадратична частина:")
 print(a.nat_quadr_part)
+
+print("\nГотова натуралізована матриця планування:")
+print(a.nat_matrix)
+
+a.print_norm_matrix()
+a.print_nat_matrix()
