@@ -15,6 +15,7 @@ class Experiment:
         self.resp_var_range = None
 
         self.interaction_combinations = None
+        self.interaction_ranges = None
 
         # Флаги
         self.five_level_flag = None
@@ -89,26 +90,28 @@ class Experiment:
 
     def gen_interaction_part(self):
         """func generate interaction part(only for 2 and 3 factors)"""
+        # Отримуємо всі можливі комбінації взаємодії факторів
         comb = []
         for n in range(2, self.factors + 1):
-            comb.append([combinations(range(1, self.factors + 1), n)])
+            comb.extend(list(map(tuple, combinations(range(1, self.factors + 1), n))))
         self.interaction_combinations = numpy.array(comb)
 
-        if self.factors == 2:
-            matrix = numpy.array([[+1], [+1], [-1], [-1]])
-        elif self.factors == 3:
-            matrix = numpy.array([[+1, +1, +1, -1],
-                                  [+1, -1, -1, +1],
-                                  [-1, +1, -1, +1],
-                                  [-1, -1, +1, -1],
-                                  [-1, -1, +1, +1],
-                                  [-1, +1, -1, -1],
-                                  [+1, -1, -1, -1],
-                                  [+1, +1, +1, +1]])
-        else:
-            raise ValueError
+        # Отримуємо межі факторів взіємодії
+        inter_ranges = []
+        for interaction in self.interaction_combinations:
+            min_inter = numpy.prod([self.factors_ranges[i - 1][0] for i in interaction])
+            max_inter = numpy.prod([self.factors_ranges[i - 1][1] for i in interaction])
+            inter_ranges.append((min_inter, max_inter))
+        self.interaction_ranges = numpy.array(inter_ranges)
 
-        self.interaction_part = matrix[:2**(self.factors-self.fractionality), :]
+        # Отримуємо матрицю взаємодії факторів
+        matrix = []
+        for raw in self.main_part:
+            inter_raw = []
+            for interaction in self.interaction_combinations:
+                inter_raw.append(numpy.prod([raw[i - 1] for i in interaction]))
+            matrix.append(inter_raw)
+        self.interaction_part = numpy.array(matrix)
 
     def gen_quadratic_part(self):
         self.quadr_part = self.main_part**2
@@ -157,14 +160,21 @@ a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666), interaction=
 a.gen_main_part()
 a.gen_interaction_part()
 a.gen_quadratic_part()
-print(a.main_part.shape)
-print(a.interaction_part.shape)
 a.gen_norm_matrix()
 a.gen_random_response_var(3)
 a.naturalize()
 
+print("\nМежі факторів:")
+print(a.factors_ranges)
+
 print("\nНормалізована матриця планування:")
 print(a.main_part)
+
+print("\nКомбінації взаємодії:")
+print(a.interaction_combinations)
+
+print("\nМежі комбінацій взаємодії:")
+print(a.interaction_ranges)
 
 print("\nВзаємодія:")
 print(numpy.array(a.interaction_part))
