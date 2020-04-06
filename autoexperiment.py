@@ -14,6 +14,7 @@ class Experiment:
         self.l = 2
         self.factors_ranges = None
         self.resp_var_range = None
+        self.probability = None             # confidence probability
 
         self.interaction_combinations = None
         self.interaction_ranges = None
@@ -38,15 +39,17 @@ class Experiment:
         # Функції відгуку
         self.resp_var_matrix = None
 
-    def set_experiment(self, num_of_factors, factors_ranges, response_var_range,
+    def set_experiment(self, num_of_factors, factors_ranges, response_var_range,  probability=0.95,
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
 
         self.factors = num_of_factors
         self.factors_ranges = numpy.array(factors_ranges)
         self.resp_var_range = response_var_range
 
+        self.probability = probability
         self.five_level_flag = fivelevel
         self.fractionality = fractionality
+
         self.interaction_flag = interaction
         self.quadr_flag = quadratic
 
@@ -187,7 +190,7 @@ class Experiment:
         print(norm_matr)
 
     def print_nat_matrix(self):
-        nat_matr = PrettyTable()
+        nat_matr = PrettyTable()g
         table_head = ["Experiment #"]
         for i in range(self.factors):
             table_head.append(f"x{i+1}")
@@ -205,9 +208,54 @@ class Experiment:
             nat_matr.add_row([i + 1, *self.nat_matrix[i], *self.resp_var_matrix[i]])
         print(nat_matr)
 
+    def print_info(self):
+        info = PrettyTable(["Назва", "Значення"])
+        info.align["Назва"] = "l"
+
+        info.add_row(["Кількіть факторів", self.factors])
+        info.add_row(["Дробність", self.fractionality])
+        info.add_row(["Довірча ймовірність", self.probability])
+
+        if self.five_level_flag:
+            info.add_row(["Кількіть рівнів", 2])
+        else:
+            info.add_row(["Кількіть рівнів", 5])
+
+        if self.interaction_flag:
+            info.add_row(["Взаємодія факторів", "+"])
+        else:
+            info.add_row(["Взаємодія факторів", "-"])
+
+        if self.quadr_flag:
+            info.add_row(["Квадратичні члени", "+"])
+        else:
+            info.add_row(["Квадратичні члени", "-"])
+
+        print(info)
+
+        ranges = PrettyTable(["Змінна", "min", "max"])
+        for factor in range(self.factors):
+            ranges.add_row([f"x{factor+1}", self.factors_ranges[factor].min(), self.factors_ranges[factor].max()])
+        ranges.add_row(["y", min(self.resp_var_range), max(self.resp_var_range)])
+        print(ranges)
+
+    @staticmethod
+    def get_fisher_critical(self, probability, f3, f4):
+        return f.ppf(probability, f3, f4)
+
+    @staticmethod
+    def get_student_critical(self, probability, df):
+        return t.ppf(probability, df)
+
+    @staticmethod
+    def get_cochran_critical(self, probability, f1, f2):
+        return 1 / (1 + (f2 - 1) / f.ppf(1 - (1 - probability) / f2, f1, (f2 - 1) * f1))
+
+    @staticmethod
     def get_l_central(self, k, p):
         return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
 
+    @staticmethod
     def get_l_rototable(self, k):
         return sqrt(k)
 
@@ -258,5 +306,6 @@ print(a.nat_quadr_part)
 print("\nГотова натуралізована матриця планування:")
 print(a.nat_matrix)
 
+a.print_info()
 a.print_norm_matrix()
 a.print_nat_matrix()
