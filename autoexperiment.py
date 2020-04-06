@@ -3,6 +3,7 @@ from math import sqrt
 from scipy.stats import t, f
 from itertools import combinations
 
+
 class Experiment:
     def __init__(self):
         # Характеристики експерименту
@@ -10,7 +11,7 @@ class Experiment:
         self.experiments = None
         self.fractionality = None           # 0 for full factorial experiment
         self.l = 2
-        self.factors_range = None
+        self.factors_ranges = None
         self.resp_var_range = None
 
         self.interaction_combinations = None
@@ -34,11 +35,11 @@ class Experiment:
         # Функції відгуку
         self.resp_var_matrix = None
 
-    def set_experiment(self, num_of_factors, factors_range, response_var_range,
+    def set_experiment(self, num_of_factors, factors_ranges, response_var_range,
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
 
         self.factors = num_of_factors
-        self.factors_range = numpy.array(factors_range)
+        self.factors_ranges = numpy.array(factors_ranges)
         self.resp_var_range = response_var_range
 
         self.five_level_flag = fivelevel
@@ -96,15 +97,6 @@ class Experiment:
         if self.factors == 2:
             matrix = numpy.array([[+1], [+1], [-1], [-1]])
         elif self.factors == 3:
-            # matrix = numpy.array([[[+1, +1, +1],
-            #                       [+1, -1, -1],
-            #                       [-1, +1, -1],
-            #                       [-1, -1, +1],
-            #                       [-1, -1, +1],
-            #                       [-1, +1, -1],
-            #                       [+1, -1, -1],
-            #                       [+1, +1, +1]],
-            #                      [[-1,], [+1,], [+1,], [-1,], [+1,], [-1,], [-1,], [+1,]]])
             matrix = numpy.array([[+1, +1, +1, -1],
                                   [+1, -1, -1, +1],
                                   [-1, +1, -1, +1],
@@ -122,8 +114,8 @@ class Experiment:
         self.quadr_part = self.main_part**2
 
     def naturalize(self):
-        average_x = self.factors_range.mean(axis=1)
-        delta_x = average_x - self.factors_range[:, 0]
+        average_x = self.factors_ranges.mean(axis=1)
+        delta_x = average_x - self.factors_ranges[:, 0]
 
         self.nat_matrix = self.main_part * delta_x + average_x
 
