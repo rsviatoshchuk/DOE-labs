@@ -39,6 +39,7 @@ class Experiment:
         # Функції відгуку
         self.resp_var_matrix = None
         self.mean_resp_var_vector = None
+        self.y = None
 
         # Коефіцієнти рівняння регресії
         self.norm_regression_coef = None
@@ -221,6 +222,25 @@ class Experiment:
         print(self.checked_nat_regr_coef)
         print("Кількість значущих коефіцієнтів: ", self.significant_coeffs)
 
+        nat_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.nat_matrix, axis=1)
+        self.y = [sum(self.checked_nat_regr_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
+
+    def fisher_test(self):
+        s_ad = (self.experiments / (self.norm_matrix.shape[0] - self.significant_coeffs)) * sum(
+            [(self.y[i] - self.mean_resp_var_vector[i]) ** 2 for i in range(self.norm_matrix.shape[0])])
+
+        variances = self.resp_var_matrix.var(axis=1)
+        average_variance = variances.mean()
+
+        fisher_criteria = s_ad / average_variance
+
+        critical_fisher = self.get_fisher_critical(self.probability,
+                                                   (self.experiments-1) * self.norm_matrix.shape[0],
+                                                   self.norm_matrix.shape[0]-self.significant_coeffs)
+        if fisher_criteria > critical_fisher:
+            return False
+        else:
+            return True
 
     def print_norm_matrix(self):
         norm_matr = PrettyTable()
@@ -385,3 +405,4 @@ a.print_regression_eq()
 a.cochran_test()
 a.find_coef()
 a.student_test()
+print(a.fisher_test())
