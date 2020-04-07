@@ -41,7 +41,10 @@ class Experiment:
         self.mean_resp_var_vector = None
 
         # Коефіцієнти рівняння регресії
-        self.regression_coef = None
+        self.norm_regression_coef = None
+        self.nat_regression_coef = None
+        self.checked_nat_regr_coef =None
+        self.significant_coeffs = None
 
     def set_experiment(self, num_of_factors, factors_ranges, response_var_range,  probability=0.95,
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
@@ -178,9 +181,15 @@ class Experiment:
 
     def find_coef(self):
         norm_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.norm_matrix, axis=1)
-        self.regression_coef = numpy.linalg.solve(norm_matr, self.mean_resp_var_vector)
+        self.norm_regression_coef = numpy.linalg.solve(norm_matr, self.mean_resp_var_vector)
 
-        yn = [sum(self.regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
+        yn = [sum(self.norm_regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
+        print(yn)
+
+        nat_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.nat_matrix, axis=1)
+        self.nat_regression_coef = numpy.linalg.solve(nat_matr, self.mean_resp_var_vector)
+
+        yn = [sum(self.nat_regression_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
         print(yn)
 
     def cochran_test(self):
@@ -194,7 +203,24 @@ class Experiment:
             return True
 
     def student_test(self):
-        pass
+        variances = self.resp_var_matrix.var(axis=1)
+        s2_b = variances/(self.norm_matrix.shape[0]*self.experiments)
+        t = abs(self.nat_regression_coef)/s2_b
+
+        critical_student = self.get_student_critical(self.probability, (self.experiments-1) * self.norm_matrix.shape[0])
+
+        self.significant_coeffs = 0
+        self.checked_nat_regr_coef = []
+        for i in range(len(t)):
+            if t[i] <= critical_student:
+                self.checked_nat_regr_coef.append(0)
+            else:
+                self.checked_nat_regr_coef.append(self.nat_regression_coef[i])
+                self.significant_coeffs += 1
+
+        print(self.checked_nat_regr_coef)
+        print("Кількість значущих коефіцієнтів: ", self.significant_coeffs)
+
 
     def print_norm_matrix(self):
         norm_matr = PrettyTable()
@@ -290,8 +316,8 @@ class Experiment:
         return f.ppf(probability, f3, f4)
 
     @staticmethod
-    def get_student_critical(probability, df):
-        return t.ppf(probability, df)
+    def get_student_critical(probability, f3):
+        return t.ppf(probability, f3)
 
     @staticmethod
     def get_cochran_critical(probability, f1, f2):
@@ -358,3 +384,4 @@ a.print_nat_matrix()
 a.print_regression_eq()
 a.cochran_test()
 a.find_coef()
+a.student_test()
