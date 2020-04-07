@@ -173,6 +173,16 @@ class Experiment:
         if self.quadr_flag:
             self.nat_matrix = numpy.append(self.nat_main_part, self.nat_quadr_part, axis=1)
 
+    def cochran_test(self):
+        variances = self.resp_var_matrix.var(axis=1)
+        cochran_criteria = variances.max()/variances.sum()
+
+        critical_cochran = self.get_cochran_critical(self.probability, self.experiments - 1, self.norm_matrix.shape[0])
+        if cochran_criteria > critical_cochran:
+            return False
+        else:
+            return True
+
     def print_norm_matrix(self):
         norm_matr = PrettyTable()
         table_head = ["Experiment #"]
@@ -263,23 +273,23 @@ class Experiment:
         print(" + ".join(equation))
 
     @staticmethod
-    def get_fisher_critical(self, probability, f3, f4):
+    def get_fisher_critical(probability, f3, f4):
         return f.ppf(probability, f3, f4)
 
     @staticmethod
-    def get_student_critical(self, probability, df):
+    def get_student_critical(probability, df):
         return t.ppf(probability, df)
 
     @staticmethod
-    def get_cochran_critical(self, probability, f1, f2):
+    def get_cochran_critical(probability, f1, f2):
         return 1 / (1 + (f2 - 1) / f.ppf(1 - (1 - probability) / f2, f1, (f2 - 1) * f1))
 
     @staticmethod
-    def get_l_central(self, k, p):
+    def get_l_central(k, p):
         return sqrt(sqrt((2 ** (k - p - 2)) * (2 ** (k - p) + 2 * k + 1)) - 2 ** (k - p - 1))
 
     @staticmethod
-    def get_l_rototable(self, k):
+    def get_l_rototable(k):
         return sqrt(k)
 
 
@@ -333,3 +343,4 @@ a.print_info()
 a.print_norm_matrix()
 a.print_nat_matrix()
 a.print_regression_eq()
+a.cochran_test()
