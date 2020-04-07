@@ -245,9 +245,9 @@ class Experiment:
         info.add_row(["Довірча ймовірність", self.probability])
 
         if self.five_level_flag:
-            info.add_row(["Кількіть рівнів", 2])
-        else:
             info.add_row(["Кількіть рівнів", 5])
+        else:
+            info.add_row(["Кількіть рівнів", 2])
 
         if self.interaction_flag:
             info.add_row(["Взаємодія факторів", "+"])
