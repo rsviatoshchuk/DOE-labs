@@ -40,6 +40,9 @@ class Experiment:
         self.resp_var_matrix = None
         self.mean_resp_var_vector = None
 
+        # Коефіцієнти рівняння регресії
+        self.regression_coef = None
+
     def set_experiment(self, num_of_factors, factors_ranges, response_var_range,  probability=0.95,
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
 
@@ -173,6 +176,13 @@ class Experiment:
         if self.quadr_flag:
             self.nat_matrix = numpy.append(self.nat_main_part, self.nat_quadr_part, axis=1)
 
+    def find_coef(self):
+        norm_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.norm_matrix, axis=1)
+        self.regression_coef = numpy.linalg.solve(norm_matr, self.mean_resp_var_vector)
+
+        yn = [sum(self.regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
+        print(yn)
+
     def cochran_test(self):
         variances = self.resp_var_matrix.var(axis=1)
         cochran_criteria = variances.max()/variances.sum()
@@ -182,6 +192,9 @@ class Experiment:
             return False
         else:
             return True
+
+    def student_test(self):
+        pass
 
     def print_norm_matrix(self):
         norm_matr = PrettyTable()
@@ -196,7 +209,7 @@ class Experiment:
                 table_head.append(f"x{i+1}{i+1}")
         for i in range(self.experiments):
             table_head.append(f"y{i + 1}")
-        table_head.append("Average y")
+        table_head.append("Mean value")
         norm_matr.field_names = table_head
 
         for i in range(self.norm_matrix.shape[0]):
@@ -216,7 +229,7 @@ class Experiment:
                 table_head.append(f"x{i+1}{i+1}")
         for i in range(self.experiments):
             table_head.append(f"y{i + 1}")
-        table_head.append("Average y")
+        table_head.append("Mean value")
         nat_matr.field_names = table_head
 
         for i in range(self.nat_matrix.shape[0]):
@@ -294,7 +307,7 @@ class Experiment:
 
 
 a = Experiment()
-a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666), interaction=True, quadratic=True, fivelevel=True)
+a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666), interaction=True, quadratic=False, fivelevel=False)
 a.gen_main_part()
 a.gen_interaction_part()
 a.gen_quadratic_part()
@@ -344,3 +357,4 @@ a.print_norm_matrix()
 a.print_nat_matrix()
 a.print_regression_eq()
 a.cochran_test()
+a.find_coef()
