@@ -38,6 +38,7 @@ class Experiment:
 
         # Функції відгуку
         self.resp_var_matrix = None
+        self.mean_resp_var_vector = None
 
     def set_experiment(self, num_of_factors, factors_ranges, response_var_range,  probability=0.95,
                        fractionality=0, interaction=False, quadratic=False, fivelevel=False):
@@ -59,12 +60,14 @@ class Experiment:
 
     def set_response_variable_matrix(self, matrix):
         self.resp_var_matrix = matrix
+        self.mean_resp_var_vector = self.resp_var_matrix.mean(axis=1)
 
     def gen_random_response_var(self, m):
         self.experiments = m
         self.resp_var_matrix = numpy.random.uniform(low=self.resp_var_range[0],
                                                     high=self.resp_var_range[1],
                                                     size=(len(self.main_part), m))
+        self.mean_resp_var_vector = self.resp_var_matrix.mean(axis=1)
 
     def gen_main_part(self):
         """func generate normalized matrix"""
@@ -183,10 +186,11 @@ class Experiment:
                 table_head.append(f"x{i+1}{i+1}")
         for i in range(self.experiments):
             table_head.append(f"y{i + 1}")
+        table_head.append("Average y")
         norm_matr.field_names = table_head
 
         for i in range(self.norm_matrix.shape[0]):
-            norm_matr.add_row([i + 1, *self.norm_matrix[i], *self.resp_var_matrix[i]])
+            norm_matr.add_row([i + 1, *self.norm_matrix[i], *self.resp_var_matrix[i], self.mean_resp_var_vector[i]])
         print(norm_matr)
 
     def print_nat_matrix(self):
@@ -202,10 +206,11 @@ class Experiment:
                 table_head.append(f"x{i+1}{i+1}")
         for i in range(self.experiments):
             table_head.append(f"y{i + 1}")
+        table_head.append("Average y")
         nat_matr.field_names = table_head
 
         for i in range(self.nat_matrix.shape[0]):
-            nat_matr.add_row([i + 1, *self.nat_matrix[i], *self.resp_var_matrix[i]])
+            nat_matr.add_row([i + 1, *self.nat_matrix[i], *self.resp_var_matrix[i], self.mean_resp_var_vector[i]])
         print(nat_matr)
 
     def print_info(self):
