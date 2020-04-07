@@ -190,7 +190,7 @@ class Experiment:
         print(norm_matr)
 
     def print_nat_matrix(self):
-        nat_matr = PrettyTable()g
+        nat_matr = PrettyTable()
         table_head = ["Experiment #"]
         for i in range(self.factors):
             table_head.append(f"x{i+1}")
@@ -238,6 +238,24 @@ class Experiment:
             ranges.add_row([f"x{factor+1}", self.factors_ranges[factor].min(), self.factors_ranges[factor].max()])
         ranges.add_row(["y", min(self.resp_var_range), max(self.resp_var_range)])
         print(ranges)
+
+    def print_regression_eq(self):
+        equation = ["\ty = b0"]
+        text = ["Рівняння регресії"]
+        for i in range(self.factors):
+            equation.append(f"b{i+1}*x{i+1}")
+        if self.interaction_flag:
+            text.append(" з урахуванням ефекту взаємодії")
+            for interaction in self.interaction_combinations:
+                equation.append(f"b{interaction}*x{interaction}")
+        if self.quadr_flag:
+            text.append(" тa квадратичними членами")
+            for ii in range(self.factors):
+                equation.append(f"b{i+1}{i+1}*x{i+1}^2")
+
+        text.append(":")
+        print("".join(text))
+        print(" + ".join(equation))
 
     @staticmethod
     def get_fisher_critical(self, probability, f3, f4):
@@ -309,3 +327,4 @@ print(a.nat_matrix)
 a.print_info()
 a.print_norm_matrix()
 a.print_nat_matrix()
+a.print_regression_eq()
