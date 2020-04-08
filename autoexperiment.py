@@ -238,29 +238,53 @@ class Experiment:
             raise ValueError
 
     def find_coef(self):
+        # prepare matrices for equation
         norm_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.norm_matrix, axis=1)
-        if norm_matr.shape[0] != norm_matr.shape[1]:
-            norm_matr1 = norm_matr[-norm_matr.shape[1]:, :]
-            mean_resp_var_vector = self.mean_resp_var_vector[-norm_matr.shape[1]:]
-        else:
-            norm_matr1 = norm_matr
-            mean_resp_var_vector = self.mean_resp_var_vector
-        self.norm_regression_coef = numpy.linalg.solve(norm_matr1, mean_resp_var_vector)
-
-        # yn = [sum(self.norm_regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
-        # print(yn)
-
         nat_matr = numpy.append(numpy.ones((self.nat_matrix.shape[0], 1)), self.nat_matrix, axis=1)
-        if nat_matr.shape[0] != nat_matr.shape[1]:
-            nat_matr1 = nat_matr[-nat_matr.shape[1]:, :]
-            mean_resp_var_vector = self.mean_resp_var_vector[-nat_matr.shape[1]:]
-        else:
-            nat_matr1 = nat_matr
-            mean_resp_var_vector = self.mean_resp_var_vector
-        self.nat_regression_coef = numpy.linalg.solve(nat_matr1, mean_resp_var_vector)
 
-        # yn = [sum(self.nat_regression_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
-        # print(yn)
+        if norm_matr.shape[0] != norm_matr.shape[1]:
+            for shift in range(norm_matr.shape[0] - norm_matr.shape[1]):
+                norm_prepared = norm_matr[shift:norm_matr.shape[1]+shift, :]
+                nat_prepared = nat_matr[shift:norm_matr.shape[1]+shift, :]
+                prepared_resp_var = self.mean_resp_var_vector[shift:norm_matr.shape[1]+shift]
+                try:
+                    self.norm_regression_coef = numpy.linalg.solve(norm_prepared, prepared_resp_var)
+                    self.nat_regression_coef = numpy.linalg.solve(nat_prepared, prepared_resp_var)
+                    break
+                except:
+                    continue
+
+        else:
+            norm_prepared = norm_matr
+            nat_prepared = nat_matr
+            prepared_resp_var = self.mean_resp_var_vector[:]
+            self.norm_regression_coef = numpy.linalg.solve(norm_prepared, prepared_resp_var)
+            self.nat_regression_coef = numpy.linalg.solve(nat_prepared, prepared_resp_var)
+
+
+        #
+        # if norm_matr.shape[0] != norm_matr.shape[1]:
+        #     norm_matr1 = norm_matr[-norm_matr.shape[1]:, :]
+        #     mean_resp_var_vector = self.mean_resp_var_vector[-norm_matr.shape[1]:]
+        # else:
+        #     norm_matr1 = norm_matr
+        #     mean_resp_var_vector = self.mean_resp_var_vector
+        # self.norm_regression_coef = numpy.linalg.solve(norm_matr1, mean_resp_var_vector)
+        #
+        # # yn = [sum(self.norm_regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
+        # # print(yn)
+        #
+        #
+        # if nat_matr.shape[0] != nat_matr.shape[1]:
+        #     nat_matr1 = nat_matr[-nat_matr.shape[1]:, :]
+        #     mean_resp_var_vector = self.mean_resp_var_vector[-nat_matr.shape[1]:]
+        # else:
+        #     nat_matr1 = nat_matr
+        #     mean_resp_var_vector = self.mean_resp_var_vector
+        # self.nat_regression_coef = numpy.linalg.solve(nat_matr1, mean_resp_var_vector)
+        #
+        # # yn = [sum(self.nat_regression_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
+        # # print(yn)
 
     def cochran_test(self):
         variances = self.resp_var_matrix.var(axis=1)
@@ -471,7 +495,7 @@ class Experiment:
 
 a = Experiment()
 a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666),
-                 interaction=False, quadratic=False, fivelevel=False)
+                 interaction=True, quadratic=True, fivelevel=True)
 a.print_info()
 
 a.gen_norm_matrix()
