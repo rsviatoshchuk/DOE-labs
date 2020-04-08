@@ -261,31 +261,6 @@ class Experiment:
             self.norm_regression_coef = numpy.linalg.solve(norm_prepared, prepared_resp_var)
             self.nat_regression_coef = numpy.linalg.solve(nat_prepared, prepared_resp_var)
 
-
-        #
-        # if norm_matr.shape[0] != norm_matr.shape[1]:
-        #     norm_matr1 = norm_matr[-norm_matr.shape[1]:, :]
-        #     mean_resp_var_vector = self.mean_resp_var_vector[-norm_matr.shape[1]:]
-        # else:
-        #     norm_matr1 = norm_matr
-        #     mean_resp_var_vector = self.mean_resp_var_vector
-        # self.norm_regression_coef = numpy.linalg.solve(norm_matr1, mean_resp_var_vector)
-        #
-        # # yn = [sum(self.norm_regression_coef * norm_matr[i]) for i in range(self.norm_matrix.shape[0])]
-        # # print(yn)
-        #
-        #
-        # if nat_matr.shape[0] != nat_matr.shape[1]:
-        #     nat_matr1 = nat_matr[-nat_matr.shape[1]:, :]
-        #     mean_resp_var_vector = self.mean_resp_var_vector[-nat_matr.shape[1]:]
-        # else:
-        #     nat_matr1 = nat_matr
-        #     mean_resp_var_vector = self.mean_resp_var_vector
-        # self.nat_regression_coef = numpy.linalg.solve(nat_matr1, mean_resp_var_vector)
-        #
-        # # yn = [sum(self.nat_regression_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
-        # # print(yn)
-
     def cochran_test(self):
         variances = self.resp_var_matrix.var(axis=1)
         cochran_criteria = variances.max()/variances.sum()
