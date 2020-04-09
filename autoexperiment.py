@@ -192,10 +192,10 @@ class Experiment:
         if self.main_part is None:
             self.gen_main_part()
 
-        if self.interaction_part is None:
+        if self.interaction_flag:
             self.gen_interaction_part()
 
-        if self.quadr_part is None:
+        if self.quadr_flag:
             self.gen_quadratic_part()
 
         if self.interaction_flag:
@@ -212,9 +212,7 @@ class Experiment:
         self.norm_matrix = self.main_part[:, :]
 
     def gen_nat_matrix(self):
-
-        if self.nat_main_part is None:
-            self.naturalize()
+        self.naturalize()
 
         if self.interaction_flag:
             matrix = numpy.append(self.nat_main_part, self.nat_interaction_part, axis=1)
@@ -273,7 +271,6 @@ class Experiment:
 
     def student_test(self):
         mean_variance = self.resp_var_matrix.var(axis=1).mean()
-        print(self.norm_matrix.shape[0]*self.experiments)
         s2_b = mean_variance/(self.norm_matrix.shape[0]*self.experiments)
         t = abs(self.nat_regression_coef)/s2_b
 
@@ -467,21 +464,79 @@ class Experiment:
                         break
         print("Кінець")
 
+    def lab5_start(self):
+        end_flag = True
+        while end_flag is True:
+            print("ПОЧАТОК\n")
+            self.set_experiment(3, [(-4, 6), (-1, 2), (-4, 2)], (197, 203.333))
+            self.experiments = 3
+            while True:
+                self.print_info()
+                self.gen_norm_matrix()
+                print(self.norm_matrix)
+                self.print_regression_eq()
+                self.gen_random_response_var()
+                self.print_norm_matrix()
+
+                self.gen_nat_matrix()
+                self.print_nat_matrix()
+
+                self.find_coef()
+                print(f"Нормалізовані коефіцієнти: {self.norm_regression_coef}")
+                print(f"Натуралізовані коефіцієнти: {self.nat_regression_coef}")
+
+                if self.cochran_test() is False:
+                    print("Дисперсії неоднорідні, збільшуємо m")
+                    self.experiments += 1
+                    continue
+                print("Дисперсії однорідні")
+                self.student_test()
+                print(f"Натуралізовані коефіцієнти: {self.checked_nat_regr_coef}")
+
+                if self.fisher_test():
+                    print("Адекватно")
+                    print(f"Натуралізовані коефіцієнти: {self.checked_nat_regr_coef}")
+                    end_flag = False
+                    break
+                else:
+                    print("Неадекватно")
+                    if self.interaction_flag is False:
+                        self.interaction_flag = True
+                        print("Додано ефект взаємодії")
+                        self.experiments = 3
+                    elif self.quadr_flag is False:
+                        self.quadr_flag = True
+                        self.five_level_flag = True
+                        self.experiments = 3
+                        print("Додано квадратичні члени, кількість рівнів збільшено до 5")
+                    else:
+                        self.reset_experiment()
+                        break
+        print("Кінець")
+
 
 a = Experiment()
-a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666),
-                 interaction=True, quadratic=True, fivelevel=True)
-a.print_info()
+# a.set_experiment(3, [(-5, 15), (10, 60), (10, 20)], (205, 231.666),
+#                  interaction=True, quadratic=True, fivelevel=False)
+# a.print_info()
+#
+# a.gen_norm_matrix()
+#
+# a.experiments = 2
+# a.gen_random_response_var()
+# a.print_norm_matrix()
+#
+# a.gen_nat_matrix()
+# a.print_nat_matrix()
+# a.print_regression_eq()
+#
+# a.find_coef()
+# print(a.norm_regression_coef)
+# a.lab5_start()
+a.set_experiment(3, [(-4, 6), (-1, 2), (-4, 2)], (197, 203.333), interaction=True)
+a.experiments = 3
 
 a.gen_norm_matrix()
-
-a.experiments = 2
 a.gen_random_response_var()
 a.print_norm_matrix()
 
-a.gen_nat_matrix()
-a.print_nat_matrix()
-a.print_regression_eq()
-
-a.find_coef()
-print(a.norm_regression_coef)
