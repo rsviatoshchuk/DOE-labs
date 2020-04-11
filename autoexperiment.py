@@ -140,7 +140,7 @@ class Experiment:
             if self.fivelevel_type == "ort":
                 five_level_part.append([0 for i in range(self.factors)])
 
-            num_array = numpy.append(num_array, numpy.array(five_level_part), axis=0)
+            num_array = numpy.vstack((num_array, numpy.array(five_level_part)))
 
         self.main_part = num_array
 
@@ -188,9 +188,7 @@ class Experiment:
             self.nat_quadr_part = self.nat_main_part ** 2
 
     def gen_norm_matrix(self):
-
-        if self.main_part is None:
-            self.gen_main_part()
+        self.gen_main_part()
 
         if self.interaction_flag:
             self.gen_interaction_part()
@@ -199,15 +197,15 @@ class Experiment:
             self.gen_quadratic_part()
 
         if self.interaction_flag:
-            matrix = numpy.append(self.main_part, self.interaction_part, axis=1)
+            matrix = numpy.hstack((self.main_part, self.interaction_part))
             if self.quadr_flag:
-                self.norm_matrix = numpy.append(matrix, self.quadr_part, axis=1)
+                self.norm_matrix = numpy.hstack((matrix, self.quadr_part))
                 return
             else:
                 self.norm_matrix = matrix
                 return
         if self.quadr_flag:
-            self.norm_matrix = numpy.append(self.main_part, self.quadr_part, axis=1)
+            self.norm_matrix = numpy.hstack((self.main_part, self.quadr_part))
             return
         self.norm_matrix = self.main_part[:, :]
 
@@ -215,15 +213,15 @@ class Experiment:
         self.naturalize()
 
         if self.interaction_flag:
-            matrix = numpy.append(self.nat_main_part, self.nat_interaction_part, axis=1)
+            matrix = numpy.hstack((self.nat_main_part, self.nat_interaction_part))
             if self.quadr_flag:
-                self.nat_matrix = numpy.append(matrix, self.nat_quadr_part, axis=1)
+                self.nat_matrix = numpy.hstack((matrix, self.nat_quadr_part))
                 return
             else:
                 self.nat_matrix = matrix
                 return
         if self.quadr_flag:
-            self.nat_matrix = numpy.append(self.nat_main_part, self.nat_quadr_part, axis=1)
+            self.nat_matrix = numpy.hstack((self.nat_main_part, self.nat_quadr_part))
             return
         self.nat_matrix = self.nat_main_part[:, :]
 
@@ -237,27 +235,21 @@ class Experiment:
 
     def find_coef(self):
         # prepare matrices for equation
-        norm_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.norm_matrix, axis=1)
-        nat_matr = numpy.append(numpy.ones((self.nat_matrix.shape[0], 1)), self.nat_matrix, axis=1)
+        norm_matr = numpy.hstack((numpy.ones((self.norm_matrix.shape[0], 1)), self.norm_matrix))
 
-        if norm_matr.shape[0] != norm_matr.shape[1]:
-            for shift in range(norm_matr.shape[0] - norm_matr.shape[1]):
-                norm_prepared = norm_matr[shift:norm_matr.shape[1]+shift, :]
-                nat_prepared = nat_matr[shift:norm_matr.shape[1]+shift, :]
-                prepared_resp_var = self.mean_resp_var_vector[shift:norm_matr.shape[1]+shift]
-                try:
-                    self.norm_regression_coef = numpy.linalg.solve(norm_prepared, prepared_resp_var)
-                    self.nat_regression_coef = numpy.linalg.solve(nat_prepared, prepared_resp_var)
-                    break
-                except:
-                    continue
+        self.norm_regression_coef = [numpy.mean(norm_matr[:, i] * self.mean_resp_var_vector)
+                                     for i in range(norm_matr.shape[1])]
+        average = self.factors_ranges.mean(axis=1)
+        delta = average - self.factors_ranges[:, 0]
 
-        else:
-            norm_prepared = norm_matr
-            nat_prepared = nat_matr
-            prepared_resp_var = self.mean_resp_var_vector[:]
-            self.norm_regression_coef = numpy.linalg.solve(norm_prepared, prepared_resp_var)
-            self.nat_regression_coef = numpy.linalg.solve(nat_prepared, prepared_resp_var)
+        if self.interaction_flag:
+            average = numpy.hstack((average, (self.interaction_ranges.mean(axis=1))))
+            delta = numpy.hstack((delta, (self.interaction_ranges.mean(axis=1) - self.interaction_ranges[:, 0])))
+
+        average = numpy.hstack(([1], average))
+        delta = numpy.hstack(([1], delta))
+
+        self.nat_regression_coef = self.norm_regression_coef * delta + average
 
     def cochran_test(self):
         variances = self.resp_var_matrix.var(axis=1)
@@ -288,7 +280,7 @@ class Experiment:
         print(self.checked_nat_regr_coef)
         print("Кількість значущих коефіцієнтів: ", self.significant_coeffs)
 
-        nat_matr = numpy.append(numpy.ones((self.norm_matrix.shape[0], 1)), self.nat_matrix, axis=1)
+        nat_matr = numpy.hstack((numpy.ones((self.norm_matrix.shape[0], 1)), self.nat_matrix))
         self.y = [sum(self.checked_nat_regr_coef * nat_matr[i]) for i in range(self.nat_matrix.shape[0])]
 
     def fisher_test(self):
@@ -325,7 +317,8 @@ class Experiment:
         norm_matr.field_names = table_head
 
         for i in range(self.norm_matrix.shape[0]):
-            norm_matr.add_row([i + 1, *self.norm_matrix[i], *self.resp_var_matrix[i], self.mean_resp_var_vector[i]])
+            norm_matr.add_row([i + 1, *numpy.round(self.norm_matrix[i], 3), *numpy.round(self.resp_var_matrix[i], 3),
+                               numpy.round(self.mean_resp_var_vector[i], 3)])
         print(norm_matr)
 
     def print_nat_matrix(self):
@@ -345,7 +338,8 @@ class Experiment:
         nat_matr.field_names = table_head
 
         for i in range(self.nat_matrix.shape[0]):
-            nat_matr.add_row([i + 1, *self.nat_matrix[i], *self.resp_var_matrix[i], self.mean_resp_var_vector[i]])
+            nat_matr.add_row([i + 1, *numpy.round(self.nat_matrix[i], 3), *numpy.round(self.resp_var_matrix[i], 3),
+                              numpy.round(self.mean_resp_var_vector[i], 3)])
         print(nat_matr)
 
     def print_info(self):
@@ -473,7 +467,6 @@ class Experiment:
             while True:
                 self.print_info()
                 self.gen_norm_matrix()
-                print(self.norm_matrix)
                 self.print_regression_eq()
                 self.gen_random_response_var()
                 self.print_norm_matrix()
@@ -532,11 +525,16 @@ a = Experiment()
 #
 # a.find_coef()
 # print(a.norm_regression_coef)
-# a.lab5_start()
-a.set_experiment(3, [(-4, 6), (-1, 2), (-4, 2)], (197, 203.333), interaction=True)
-a.experiments = 3
+a.lab5_start()
+# a.set_experiment(3, [(-4, 6), (-1, 2), (-4, 2)], (197, 203.333), interaction=False)
+# a.experiments = 3
+#
+# a.gen_norm_matrix()
+# a.gen_random_response_var()
+# a.print_norm_matrix()
 
-a.gen_norm_matrix()
-a.gen_random_response_var()
-a.print_norm_matrix()
+# a.gen_nat_matrix()
 
+# a.find_coef()
+# print(a.norm_regression_coef)
+# print(a.nat_regression_coef)
